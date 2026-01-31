@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Citizen Issue Reporter</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            background: #f5f6fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+        }
+        .header {
+            background: #2a3f54;
+            color: #fff;
+            padding: 28px 0;
+            text-align: center;
+            font-size: 2em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+        }
+        .dashboard-card {
+            max-width: 900px;
+            margin: 36px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 32px 28px 28px 28px;
+        }
+        .form-row {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .form-row input, .form-row select, .form-row textarea {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+        .form-row textarea {
+            resize: vertical;
+        }
+        .report-btn {
+            padding: 12px 32px;
+            border-radius: 12px;
+            background: #2a3f54;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+        #map {
+            height: 320px;
+            width: 100%;
+            border-radius: 14px;
+            margin: 18px 0 28px 0;
+            box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+        }
+        .issues-list {
+            margin-top: 18px;
+        }
+        .issue-card {
+            background: #f9fafc;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+            padding: 18px 22px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+        }
+        .issue-status {
+            padding: 6px 18px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 1em;
+            color: #fff;
+            margin-left: auto;
+        }
+        .status-open { background: #e67e22; }
+        .status-inprogress { background: #2980b9; }
+        .status-resolved { background: #27ae60; }
+        .issue-type {
+            font-weight: 600;
+            color: #2a3f54;
+            margin-bottom: 6px;
+        }
+        .issue-desc {
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .issue-meta {
+            font-size: 0.95em;
+            color: #888;
+        }
+        /* Issue Status Slidebar Styles */
+        #statusSlidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: #fff;
+            box-shadow: -2px 0 16px rgba(0,0,0,0.10);
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+        #statusSlidebar .close {
+            margin-top: 24px;
+            padding: 8px 18px;
+            border-radius: 12px;
+            background: #2a3f54;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        Empower Your Community: Report & Track Local Issues
+    </div>
+    <div class="dashboard-card">
+        <h2 style="margin-bottom:18px;">Report an Issue</h2>
+        <form id="reportForm">
+            <div class="form-row">
+                <select id="issueType" required>
+                    <option value="">Select Issue Type</option>
+                    <option value="Road Damage">Road Damage</option>
+                    <option value="Garbage">Garbage</option>
+                    <option value="Water Leak">Water Leak</option>
+                    <option value="Street Light">Street Light</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="text" id="issueLocation" placeholder="Location (address or landmark)" required>
+            </div>
+            <div class="form-row">
+                <textarea id="issueDesc" rows="2" placeholder="Describe the issue..." required></textarea>
+            </div>
+            <div class="form-row">
+                <input type="file" id="issueImage" accept="image/*" style="flex:1;">
+                <input type="file" id="issueVideo" accept="video/*" style="flex:1;">
+            </div>
+            <div class="form-row">
+                <label style="font-weight:600;">Report as:</label>
+                <label><input type="radio" name="reporterType" value="Verified" checked> Verified</label>
+                <label><input type="radio" name="reporterType" value="Anonymous"> Anonymous</label>
+            </div>
+            <button type="submit" class="report-btn">Report Issue</button>
+        </form>
+        <div id="map"></div>
+        <h2 style="margin-bottom:12px;">Reported Issues</h2>
+        <div class="issues-list" id="issuesList">
+            <!-- Issues will appear here -->
+        </div>
+        <div class="form-row" style="margin-bottom:18px;">
+            <select id="filterStatus">
+                <option value="">All Status</option>
+                <option value="Open">Reported</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+            <select id="filterCategory">
+                <option value="">All Categories</option>
+                <option value="Road Damage">Road Damage</option>
+                <option value="Garbage">Garbage</option>
+                <option value="Water Leak">Water Leak</option>
+                <option value="Street Light">Street Light</option>
+                <option value="Other">Other</option>
+            </select>
+            <select id="filterDistance">
+                <option value="5">5 km</option>
+                <option value="3">3 km</option>
+                <option value="1">1 km</option>
+            </select>
+        </div>
+    </div>
+    <!-- Issue Status Slidebar (hidden by default) -->
+    <div id="statusSlidebar">
+        <div style="padding:28px;">
+            <h2 style="color:#2a3f54;font-size:1.3em;margin-bottom:18px;">Issue Status Tracking</h2>
+            <div id="slidebarDetails"></div>
+            <button id="closeSlidebar" class="close">Close</button>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

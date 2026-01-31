@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Citizen Issue Reporter</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+        }
+        .admin-header {
+            background: #2a3f54;
+            color: #fff;
+            padding: 32px 0 24px 0;
+            text-align: center;
+            font-size: 2.2em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+        }
+        .admin-card {
+            max-width: 980px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+            padding: 38px 38px 32px 38px;
+        }
+        .section-title {
+            font-size: 1.4em;
+            color: #2a3f54;
+            margin-bottom: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .analytics {
+            display: flex;
+            gap: 38px;
+            margin-bottom: 38px;
+        }
+        .analytics-card {
+            background: linear-gradient(120deg, #f9fafc 60%, #e0eafc 100%);
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.09);
+            padding: 26px 28px;
+            flex: 1;
+            text-align: center;
+            transition: box-shadow 0.2s;
+        }
+        .analytics-card:hover {
+            box-shadow: 0 4px 16px rgba(44,62,80,0.16);
+        }
+        .analytics-card i {
+            font-size: 2.2em;
+            color: #2a3f54;
+            margin-bottom: 8px;
+        }
+        .analytics-card .big {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #2980b9;
+        }
+        .analytics-card .label {
+            font-size: 1em;
+            color: #888;
+        }
+        .flagged-list {
+            margin-bottom: 38px;
+        }
+        .flagged-card {
+            background: linear-gradient(120deg, #fff7f7 60%, #f9fafc 100%);
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.09);
+            padding: 22px 28px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            border-left: 8px solid #e74c3c;
+            transition: box-shadow 0.2s;
+        }
+        .flagged-card:hover {
+            box-shadow: 0 4px 16px rgba(231,76,60,0.13);
+        }
+        .flagged-actions button {
+            margin-right: 12px;
+            padding: 8px 18px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        .btn-approve { background: #27ae60; color: #fff; }
+        .btn-delete { background: #e74c3c; color: #fff; }
+        .btn-ban { background: #2980b9; color: #fff; }
+        .btn-approve:hover { background: #219150; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-ban:hover { background: #1a5a8a; }
+        .user-info {
+            font-size: 0.97em;
+            color: #888;
+            margin-top: 6px;
+        }
+        .status-log {
+            background: #f5f6fa;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-top: 10px;
+            font-size: 0.97em;
+            color: #2a3f54;
+        }
+        .status-log span {
+            color: #888;
+            font-size: 0.95em;
+        }
+        .ban-user-section {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #banUserInput {
+            padding:8px 14px;
+            border-radius:8px;
+            border:1px solid #ccc;
+            font-size:1em;
+            flex:1;
+        }
+        #banUserBtn {
+            padding:8px 18px;
+            border-radius:10px;
+            background:#2980b9;
+            color:#fff;
+            border:none;
+            cursor:pointer;
+            font-weight:600;
+            font-size:1em;
+        }
+        #banUserBtn:hover {
+            background:#1a5a8a;
+        }
+        #banUserMsg {
+            margin-top:10px;
+            color:#e74c3c;
+            font-weight:600;
+        }
+        .no-flagged {
+            color: #888;
+            font-size: 1.1em;
+            text-align: center;
+            margin: 24px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <i class='bx bxs-shield'></i> Admin Dashboard - Citizen Issue Reporter
+    </div>
+    <div class="admin-card">
+        <div style="margin-bottom:24px;">
+        </div>
+        <div class="section-title"><i class='bx bxs-bar-chart-alt-2'></i> Analytics</div>
+        <div class="analytics">
+            <div class="analytics-card">
+                <i class='bx bxs-report'></i>
+                <div class="big" id="totalIssues">0</div>
+                <div class="label">Total Issues Posted</div>
+            </div>
+            <div class="analytics-card">
+                <i class='bx bxs-category'></i>
+                <div class="big" id="topCategory">-</div>
+                <div class="label">Most Reported Category</div>
+            </div>
+            <div class="analytics-card">
+                <i class='bx bxs-user-check'></i>
+                <div class="big" id="totalVerified">0</div>
+                <div class="label">Verified Reports</div>
+            </div>
+            <div class="analytics-card">
+                <i class='bx bxs-user'></i>
+                <div class="big" id="totalAnonymous">0</div>
+                <div class="label">Anonymous Reports</div>
+            </div>
+        </div>
+        <div class="section-title"><i class='bx bxs-flag-alt'></i> Flagged Issues (Spam/Invalid)</div>
+        <div class="flagged-list" id="flaggedList">
+            <!-- Flagged issues will appear here -->
+        </div>
+        <div class="section-title"><i class='bx bxs-user-x'></i> Ban User</div>
+        <div class="ban-user-section">
+            <input type="text" id="banUserInput" placeholder="Enter username to ban">
+            <button id="banUserBtn" class="btn-ban"><i class='bx bxs-user-x'></i> Ban User</button>
+        </div>
+        <div id="banUserMsg"></div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
